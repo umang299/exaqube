@@ -1,0 +1,4 @@
+scrapper:
+  url: https://elines.coscoshipping.com/ebbase/demurrage/public/findDataList
+  download_link: https://elines.coscoshipping.com/ebbase/demurrage/public/viewIddsPdf
+  output_dir: 'downloads'
