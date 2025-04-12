@@ -2,3 +2,8 @@ scrapper:
   url: https://elines.coscoshipping.com/ebbase/demurrage/public/findDataList
   download_link: https://elines.coscoshipping.com/ebbase/demurrage/public/viewIddsPdf
   output_dir: 'downloads'
+extractor:
+  conf_thrs: 0.2
+  iou_thrs: 0.8
+  img_dir: 'output_images'
+  model_name: 'yolov11l_best.pt'
