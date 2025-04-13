@@ -6,25 +6,19 @@ import logging
 from typing import List, Optional, Dict, Any
 
 
-# Setup logging to a file
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='app.log',        # Logs will be saved to 'app.log'
-    filemode='a'               # Append mode (use 'w' to overwrite on each run)
-)
-
-logger = logging.getLogger(__name__)
-
 cwd = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(cwd)
 
 from src.models.config import Config
 from src.models.scrapper import TariffEntry
+from src.logger import setup_console_and_file_logging
 
 cfg = Config.from_yaml(filepath=os.path.join(
                 cwd, 'src', 'config.yaml'
             ))
+
+logger = setup_console_and_file_logging(level=logging.INFO,
+                                        logger_name=__name__)
 
 
 class Scraper:
