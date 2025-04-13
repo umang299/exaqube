@@ -189,12 +189,30 @@ class Extractor:
                     # Crop the region
                     cropped_region = image.crop((x1, y1, x2, y2))
                     response.append(cropped_region)
-            return response
             
+            if len(response) !=0:
+                return response
+            else:
+                return None
+
         except Exception as e:
             logger.error("Error extracting patches from images: %s", str(e))
             return None
-    
+        
+    def cleanup_output_directory(self):
+        """Clean up temporary files in the output directory."""
+        try:
+            for file in os.listdir(self.output_dir):
+                file_path = os.path.join(self.output_dir, file)
+                if os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                        logger.debug("Removed temporary image: %s", file_path)
+                    except Exception as e:
+                        logger.warning("Could not remove file %s: %s", file_path, str(e))
+        except Exception as e:
+            logger.error("Error during cleanup: %s", str(e))
+
     def run(self, pdf_file: str) -> Dict[str, Dict[int, str]]:
         """
         Execute the complete table extraction pipeline on a PDF document.
@@ -213,14 +231,8 @@ class Extractor:
             logger.info("Processing PDF file: %s", pdf_file)
             # Check if PDF file exists
             if not os.path.exists(pdf_file):
-                raise FileNotFoundError("PDF file not found: %s", pdf_file)
+                raise FileNotFoundError(f"PDF file not found: {pdf_file}")
 
-            # Clear output directory
-            for file in os.listdir(self.output_dir):
-                file_path = os.path.join(self.output_dir, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            
             # Convert PDF to images
             conversion_status = self.convert_pdf2img(pdf_path=pdf_file)
             if not conversion_status:
@@ -229,38 +241,50 @@ class Extractor:
 
             # Process each image
             resp = {}
-            for filename in os.listdir(self.output_dir):
+            image_files = [f for f in os.listdir(self.output_dir) if f.endswith('.png')]
+            
+            for filename in image_files:
                 logger.info("Processing image: %s", filename)
                 img_path = os.path.join(self.output_dir, filename)
 
-                # Run detection and OCR
-                predictions = self.prediction(image_path=img_path)
-                if predictions is None:
-                    return None
+                try:
+                    # Run detection
+                    predictions = self.prediction(image_path=img_path)
+                    if predictions is None:
+                        logger.error("Failed to get predictions for %s", filename)
+                        continue  # Skip this file but continue with others
 
-                table_patches = self.extract_boxes(
+                    # Extract table patches
+                    table_patches = self.extract_boxes(
                                         image=predictions[1],
                                         detections=predictions[0]
                                     )
+                    
+                    # Add debugging info
+                    logger.info(f"Extracted {len(table_patches) if table_patches else 0} table patches from {filename}")
+                    
+                    # Store results
+                    resp[filename] = table_patches
+                    
+                except Exception as e:
+                    logger.error("Error processing image %s: %s", filename, str(e))
+                    # Continue with next file instead of returning None
+                    continue
 
-                # Store results
-                resp[filename] = table_patches
-                
-                # Clean up
-                os.remove(img_path)
-                logger.debug("Removed temporary image: %s", img_path)
+            # Clean up after processing all files
+            self.cleanup_output_directory()
             
-            logger.info("Completed processing PDF: %s",pdf_file)
+            logger.info("Completed processing PDF: %s", pdf_file)
+            
+            # Check if we extracted any data
+            if not resp:
+                logger.warning("No table patches were extracted from any page")
+                return None
+
             return resp
 
         except Exception as e:
-            logger.error("Error processing PDF: %s",str(e))
+            logger.error("Error processing PDF: %s", str(e))
             # Attempt to clean up any temporary files
-            for file in os.listdir(self.output_dir):
-                try:
-                    file_path = os.path.join(self.output_dir, file)
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                except:
-                    pass
+            self.cleanup_output_directory()
             return None
