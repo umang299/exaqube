@@ -1,0 +1,50 @@
+# Virtual environments
+venv/
+env/
+ENV/
+virtualenv/
+
+# Poppler directory
+poppler*/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Git directory
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Downloaded models/data that should be fetched at runtime
+assets/yolov11l_best.pt
