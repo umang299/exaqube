@@ -275,10 +275,6 @@ docker logs -f <container_id>
 
 Check these logs for detailed information about any issues.
 
-## License
-
-[Specify your license here]
-
 ## Acknowledgements
 
 - YOLOv11 Document Layout Analysis: https://github.com/moured/YOLOv11-Document-Layout-Analysis
