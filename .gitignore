@@ -3,3 +3,5 @@ poppler-24.08.0/
 *.log
 .env
 venv/
+*.ipynb
+*.db
