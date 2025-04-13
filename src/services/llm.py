@@ -6,7 +6,6 @@ import logging
 from PIL import Image
 from io import BytesIO
 from openai import OpenAI
-from dotenv import load_dotenv
 from typing import Dict, Any, Union
 
 
@@ -20,7 +19,7 @@ from src.logger import setup_console_and_file_logging
 logger = setup_console_and_file_logging(level=logging.INFO,
                                         logger_name=__name__)
 
-load_dotenv(os.path.join(cwd, '.env'))
+# load_dotenv(os.path.join(cwd, '.env'))
 
 class ParseTables:
     """
