@@ -105,14 +105,9 @@ class Extractor:
         try:
             logger.info("Converting PDF to images: %s", pdf_path)
 
-            # Get poppler path from config or use default
-            poppler_path = r'C:\2025\exaqube\poppler-24.08.0\Library\bin'
 
             # Convert PDF to images with appropriate parameters
             conversion_kwargs = {'dpi': 300}
-            if poppler_path:
-                conversion_kwargs['poppler_path'] = poppler_path
-
             images = convert_from_path(pdf_path, **conversion_kwargs)
 
             count = 0
