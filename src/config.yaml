@@ -10,3 +10,5 @@ extractor:
 openai:
   model_name: 'gpt-4o'
   prompt_file: 'prompt.txt'
+database:
+  name: 'tariff.db'

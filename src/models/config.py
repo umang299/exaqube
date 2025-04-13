@@ -20,11 +20,17 @@ class OpenaiConfig:
     model_name: str
     prompt_file: str
 
+
+@dataclass
+class SqliteConfig:
+    name: str
+
 @dataclass
 class Config:
     scrapper: ScrapperConfig
     extractor: ExtractorConfig
     openai: OpenaiConfig
+    sqlite: SqliteConfig
 
     @classmethod
     def from_yaml(cls, filepath: str) -> "Config":
@@ -33,7 +39,8 @@ class Config:
 
         return cls(scrapper=ScrapperConfig(**data["scrapper"]),
                    extractor=ExtractorConfig(**data["extractor"]),
-                   openai = OpenaiConfig(**data['openai'])
+                   openai = OpenaiConfig(**data['openai']),
+                   sqlite = SqliteConfig(**data['database'])
                    )
 
     def to_dict(self) -> dict:
@@ -52,5 +59,8 @@ class Config:
             "openai" : {
                 "model_name" : self.openai.model_name,
                 "prompt_file" : self.openai.prompt_file
-            }
+            },
+            'database' : {
+                "name" : self.sqlite.name
+            }            
         }
