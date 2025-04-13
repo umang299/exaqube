@@ -1,13 +1,12 @@
 import os
 import sys
 import torch
-import easyocr
 import numpy as np
 from PIL import Image
 from ultralytics import YOLO
 from pdf2image import convert_from_path
 import logging
-from typing import List, Dict, Tuple, Any, Optional
+from typing import List, Dict, Tuple, Any
 
 
 # Setup logging to a file
@@ -31,20 +30,23 @@ cfg = Config.from_yaml(filepath=os.path.join(
 
 class Extractor:
     """
-    Class for extracting text from tables in PDF documents using object detection and OCR.
+    Extracts tables from PDF documents using YOLO object detection and image processing.
     
     This class implements a pipeline to:
-    1. Convert PDF pages to images
-    2. Detect tables or regions of interest using a YOLO model
-    3. Extract text from these regions using EasyOCR
+    1. Convert PDF pages to high-resolution images
+    2. Detect tables or regions of interest using a pre-trained YOLO model
+    3. Extract table regions as cropped image patches
+    
+    The extractor focuses on identifying specific table structures based on 
+    object detection confidence thresholds and class labels.
     """
-
     def __init__(self, config: Config):
         """
-        Initialize the extractor with model and OCR settings.
+        Initialize the extractor with configuration settings and model resources.
         
         Args:
-            config: Configuration object (optional)
+            config: Configuration object containing settings for extraction
+                   parameters, file paths, and model configurations
         """
         # Use provided config or import if not provided
         self.cfg = config
@@ -66,21 +68,17 @@ class Extractor:
         logger.info(f"Loading YOLO model from: {model_path}")
         self.model = self.load_model(model_path=model_path)
 
-        # Setup OCR
-        logger.info("Initializing EasyOCR")
-        self.ocr = self.setup_ocr()
-
     def convert_pdf2img(self,
                         pdf_path: str
                     ) -> List[str]:
         """
-        Convert PDF pages to images.
+        Convert PDF document pages to high-resolution PNG images.
         
         Args:
-            pdf_path: Path to the PDF file
+            pdf_path: Path to the input PDF file
             
         Returns:
-            List of paths to the generated images
+            bool: True if conversion was successful, None otherwise
         """
         try:
             logger.info(f"Converting PDF to images: {pdf_path}")
@@ -111,13 +109,13 @@ class Extractor:
 
     def load_model(self, model_path: str) -> YOLO:
         """
-        Load the YOLO model for object detection.
+        Load and initialize the YOLO object detection model.
         
         Args:
-            model_path: Path to the YOLO model file
+            model_path: Path to the YOLO model weights file
             
         Returns:
-            Loaded YOLO model
+            YOLO: Initialized model object if successful, None otherwise
         """
         try:
             if self.is_gpu_available:
@@ -131,40 +129,18 @@ class Extractor:
             logger.error("Error loading model: %s", str(e))
             return None
 
-    def setup_ocr(self) -> easyocr.Reader:
-        """
-        Set up the OCR reader.
-        
-        Returns:
-            Configured EasyOCR Reader object
-        """
-        try:
-            # Get languages from config if available, otherwise default to English
-            languages = getattr(self.cfg.extractor, 'ocr_languages', ['en'])
-
-            reader = easyocr.Reader(
-                lang_list=languages,
-                gpu=self.is_gpu_available,
-                # Add any additional parameters from config if needed
-                detector=getattr(self.cfg.extractor, 'detector', True),
-                recognizer=getattr(self.cfg.extractor, 'recognizer', True)
-            )
-            return reader
-        except Exception as e:
-            logger.error("Error setting up OCR: %s", str(e))
-            return None
-
     def prediction(self, 
                    image_path: str
                 ) -> Tuple[Any, Image.Image]:
         """
-        Perform object detection on an image.
+        Perform object detection to identify table regions in an image.
         
         Args:
-            image_path: Path to the image file
+            image_path: Path to the input image file
             
         Returns:
-            Tuple containing detection boxes and the PIL image
+            Tuple containing detection boxes and the original PIL image,
+            or None if detection failed
         """
         try:
             logger.info("Running detection on: %s", image_path)
@@ -188,57 +164,50 @@ class Extractor:
     
     def extract_boxes(self, image: Image.Image, detections: Any) -> Dict[int, str]:
         """
-        Extract text from detected regions using OCR.
+        Extract table regions from detected bounding boxes.
         
         Args:
-            image: PIL Image object
+            image: Original PIL Image object
             detections: Detection boxes from YOLO model
             
         Returns:
-            Dictionary mapping region indices to extracted text
+            List of cropped image regions containing detected tables,
+            filtered by confidence threshold and class ID 8
         """
         try:
-            response = {}
-            
+            response = list()
             # Process each detection
             for i, conf in enumerate(detections.conf):
                 # Skip low confidence detections
                 conf_value = conf.detach().cpu().numpy()
-                if conf_value < self.conf_thrs:
-                    continue
-                
-                # Get bounding box coordinates
-                xyxy = detections.xyxy[i].detach().cpu().numpy()
-                x1, y1, x2, y2 = map(int, xyxy)
-                
-                # Crop the region
-                cropped_region = image.crop((x1, y1, x2, y2))
-                
-                # Apply OCR to the cropped region
-                ocr_result = self.ocr.readtext(np.array(cropped_region))
-                
-                # Extract and join the text
-                if ocr_result:
-                    response[i] = "\n".join([text for _, text, _ in ocr_result])
-                    logger.debug(f"Region {i} text: {response[i][:50]}...")
-                else:
-                    logger.warning(f"No text detected in region {i}")
-            
+                label = detections.cls.detach().cpu().numpy()
+                if conf_value >= 0.2 and label[i] == 8:
+                    # Get bounding box coordinates
+                    xyxy = detections.xyxy[i].detach().cpu().numpy()
+                    x1, y1, x2, y2 = map(int, xyxy)
+
+                    # Crop the region
+                    cropped_region = image.crop((x1, y1, x2, y2))
+                    response.append(cropped_region)
             return response
             
         except Exception as e:
-            logger.error(f"Error extracting text from boxes: {e}")
-            raise
+            logger.error("Error extracting patches from images: %s", str(e))
+            return None
     
     def run(self, pdf_file: str) -> Dict[str, Dict[int, str]]:
         """
-        Run the complete extraction pipeline on a PDF file.
+        Execute the complete table extraction pipeline on a PDF document.
+        
+        Process includes converting PDF to images, detecting tables, and 
+        extracting table regions as image patches.
         
         Args:
-            pdf_file: Path to the PDF file
+            pdf_file: Path to the input PDF file
             
         Returns:
-            Dictionary mapping page filenames to extracted text regions
+            Dictionary mapping page filenames to lists of extracted table images,
+            or None if processing failed at any stage
         """
         try:
             logger.info("Processing PDF file: %s", pdf_file)
@@ -261,7 +230,7 @@ class Extractor:
             # Process each image
             resp = {}
             for filename in os.listdir(self.output_dir):
-                logger.info(f"Processing image: {filename}")
+                logger.info("Processing image: %s", filename)
                 img_path = os.path.join(self.output_dir, filename)
 
                 # Run detection and OCR
@@ -269,21 +238,23 @@ class Extractor:
                 if predictions is None:
                     return None
 
-                text = self.extract_boxes(image=predictions[1],
-                                          detections=predictions[0])
+                table_patches = self.extract_boxes(
+                                        image=predictions[1],
+                                        detections=predictions[0]
+                                    )
 
                 # Store results
-                resp[filename] = text
+                resp[filename] = table_patches
                 
                 # Clean up
                 os.remove(img_path)
-                logger.debug(f"Removed temporary image: {img_path}")
+                logger.debug("Removed temporary image: %s", img_path)
             
-            logger.info(f"Completed processing PDF: {pdf_file}")
+            logger.info("Completed processing PDF: %s",pdf_file)
             return resp
 
         except Exception as e:
-            logger.error(f"Error processing PDF: {e}")
+            logger.error("Error processing PDF: %s",str(e))
             # Attempt to clean up any temporary files
             for file in os.listdir(self.output_dir):
                 try:
