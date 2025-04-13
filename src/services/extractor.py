@@ -1,6 +1,7 @@
 import os
 import sys
 import torch
+import requests
 import logging
 from PIL import Image
 from ultralytics import YOLO
@@ -60,9 +61,31 @@ class Extractor:
         os.makedirs(self.output_dir, exist_ok=True)
 
         # Load model
-        model_path = os.path.join(cwd, 'assets', self.cfg.extractor.model_name)
-        logger.info(f"Loading YOLO model from: {model_path}")
-        self.model = self.load_model(model_path=model_path)
+        self.model_path = os.path.join(cwd, 'assets', self.cfg.extractor.model_name)
+        _ = self.download_file()
+        logger.info(f"Loading YOLO model from: {self.model_path}")
+        self.model = self.load_model(model_path=self.model_path)
+    
+    def download_file(self):
+        """
+        Downloads a file from a URL and saves it to the specified path.
+        
+        Returns:
+            bool: True if download is successful, False otherwise.
+        """
+        try:
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+            with requests.get(self.cfg.extractor.model_url, stream=True) as r:
+                r.raise_for_status()
+                with open(self.model_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+            logger.info("Download completed: %s",self.model_path)
+            return True
+        except Exception as e:
+            logger.error("Failed to download file: %s", e)
+            return False
 
     def convert_pdf2img(self,
                         pdf_path: str

@@ -14,6 +14,7 @@ class ExtractorConfig:
     iou_thrs: float
     img_dir: str
     model_name: str
+    model_url: str
 
 @dataclass
 class OpenaiConfig:
@@ -54,7 +55,8 @@ class Config:
                 "conf_thrs" : self.extractor.conf_thrs,
                 "iou_thrs" : self.extractor.iou_thrs,
                 "img_dir" : self.extractor.img_dir,
-                "model_name" : self.extractor.model_name
+                "model_name" : self.extractor.model_name,
+                "model_url" : self.extractor.model_url
             },
             "openai" : {
                 "model_name" : self.openai.model_name,

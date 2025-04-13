@@ -7,6 +7,7 @@ extractor:
   iou_thrs: 0.8
   img_dir: 'output_images'
   model_name: 'yolov11l_best.pt'
+  model_url: 'https://github.com/moured/YOLOv11-Document-Layout-Analysis/releases/download/doclaynet_weights/yolov11l_best.pt'
 openai:
   model_name: 'gpt-4o'
   prompt_file: 'prompt.txt'
