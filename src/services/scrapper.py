@@ -238,13 +238,11 @@ class Scraper:
         if not tariff_data:
             return None
 
-        results[country]["tariff_data"] = tariff_data
-
         # Download PDFs
         download_results = self.download_tariff_pdfs(tariff_data=tariff_data)
-        results[country]["downloads"] = download_results
-
         if download_results["inbound"] or download_results["outbound"]:
-            results[country]["status"] = "success"
+            tariff_data.status = True
+        else:
+            tariff_data.status = False
 
-        return results
+        return tariff_data
