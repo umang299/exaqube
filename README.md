@@ -1,6 +1,6 @@
 # Shipping Tariff Extractor
 
-This project automates the extraction of shipping line tariffs from multiple sources, including websites with Excel downloads and PDF documents. It leverages web scraping, PDF processing, computer vision, and AI technologies to retrieve, extract, and store structured tariff data.
+This project automates the extraction of shipping line tariffs from multiple sources, including websites and PDF documents. It leverages web scraping, PDF processing, computer vision, and AI technologies to retrieve, extract, and store structured tariff data.
 
 ## Overview
 
@@ -50,12 +50,32 @@ Before setting up the project, ensure you have:
 
 ## Installation
 
-### Option 1: Local Setup
+### Option 1: Pre-built Docker Image (Recommended)
+
+The easiest way to get started is with the pre-built Docker image:
+
+1. Pull the Docker image:
+   ```bash
+   docker pull umang299/shipping-tariff-scraper
+   ```
+
+2. Run the container with your OpenAI API key:
+   ```bash
+   docker run -p 8000:8000 -e OPENAI=your_openai_api_key_here umang299/shipping-tariff-scraper
+   ```
+
+3. Access the API at `http://localhost:8000`
+
+This option requires no setup beyond Docker installation and provides all dependencies pre-configured.
+
+### Option 2: Local Setup
+
+If you prefer to run the application locally:
 
 1. Clone the repository:
    ```bash
-   git clone <your-repository-url>
-   cd shipping-tariff-extractor
+   git clone https://github.com/umang299/exaqube.git
+   cd exaqube
    ```
 
 2. Create and activate a virtual environment:
@@ -81,7 +101,9 @@ Before setting up the project, ensure you have:
    OPENAI=your_openai_api_key_here
    ```
 
-### Option 2: Docker Setup
+### Option 3: Build Your Own Docker Image
+
+If you need to customize the Docker setup:
 
 1. Clone the repository:
    ```bash
@@ -147,10 +169,13 @@ Start the FastAPI server:
 # Local setup
 uvicorn main:app --reload
 
-# Docker setup (already running if container is started)
+# Docker setup
+# If using the pre-built image or your own Docker image, the server starts automatically
 ```
 
 The API will be available at `http://localhost:8000`.
+
+You can also access the interactive API documentation at `http://localhost:8000/docs`.
 
 ### API Endpoints
 
@@ -191,18 +216,6 @@ print(response.json())
 response = requests.get("http://localhost:8000/fetch")
 print(response.json())
 ```
-
-## Task 1: Emirates Shipping Line (Not Implemented)
-
-Task 1 involves extracting data from Emirates Shipping Line. This requires:
-
-1. Navigating to https://www.emiratesline.com/our-offices/
-2. Selecting countries from the dropdown
-3. Clicking on "Demurrage" for each port
-4. Downloading Excel files with tariff information
-
-**Implementation Note**: The current code focuses on Task 2 (COSCO Shipping). The Emirates Shipping Line implementation would require additional web scraping components.
-
 ## Task 2: COSCO Shipping (Implemented)
 
 Task 2 extracts tariff data from COSCO Shipping PDFs:
@@ -227,23 +240,40 @@ To extend the project for additional shipping lines:
 ### Common Issues
 
 1. **PDF Conversion Errors**:
-   - Ensure Poppler is correctly installed and in your PATH
+   - Ensure Poppler is correctly installed and in your PATH (only for local setup)
    - Check the conversion parameters in `extractor.py`
+   - When using Docker, these dependencies are pre-installed
 
 2. **OpenAI API Errors**:
-   - Verify your API key is correctly set in the `.env` file
+   - Verify your API key is correctly set (in the `.env` file for local setup or as an environment variable for Docker)
    - Check API usage limits and quotas
+   - Ensure your OpenAI account has access to the GPT-4o model
 
 3. **YOLO Model Loading Errors**:
-   - Ensure sufficient disk space for the model download
+   - Ensure sufficient disk space for the model download (approximately 500MB)
    - Check GPU availability with `torch.cuda.is_available()`
+   - The Docker image comes with necessary CUDA libraries for GPU support
 
 4. **Website Structure Changes**:
    - The scraper depends on specific website structures. If websites change, update the selectors in the scraper service
 
+5. **Docker-Specific Issues**:
+   - If using the pre-built image and encountering errors, try building your own image for more control
+   - For permission issues with volume mounts, ensure proper permissions are set
+
 ### Logs
 
-Logs are stored in `app.log` and are also printed to the console. Check these logs for detailed information about any issues.
+Logs are stored in `app.log` and are also printed to the console. When using Docker, you can view logs with:
+
+```bash
+# For the pre-built image
+docker logs <container_id>
+
+# Or stream logs in real-time
+docker logs -f <container_id>
+```
+
+Check these logs for detailed information about any issues.
 
 ## License
 
