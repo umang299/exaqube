@@ -9,6 +9,7 @@ class TariffEntry:
     inIddsPdfUuid: str
     outIddsPdfUuid: str
     content: str
+    status: bool
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'TariffEntry':
@@ -18,5 +19,6 @@ class TariffEntry:
             outPdfName=data.get('outPdfName', ''),
             inIddsPdfUuid=data.get('inIddsPdfUuid', ''),
             outIddsPdfUuid=data.get('outIddsPdfUuid', ''),
-            content=data.get('content', '')
+            content=data.get('content', ''),
+            status = data.get('status', '')
         )
