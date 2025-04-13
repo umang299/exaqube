@@ -215,7 +215,7 @@ class Scraper:
 
         return results
 
-    def run(self, countries: List[str]) -> Dict[str, Dict[str, Any]]:
+    def run(self, country: str) -> Dict[str, Dict[str, Any]]:
         """
         Run the scraper for multiple countries.
         
@@ -225,26 +225,26 @@ class Scraper:
         Returns:
             Dictionary with results for each country
         """
-        results = {}
-        for country in countries:
-            time.sleep(30)
-            logger.info("Processing country: %s", country)
-            results[country] = {
-                                    "status": "failure",
-                                    "tariff_data": None,
-                                    "downloads": {}
-                                }
-            # Fetch tariff info
-            tariff_data = self.fetch_tariff_info(country=country)
-            if not tariff_data:
-                continue
+        results = dict()
+        time.sleep(30)
+        logger.info("Processing country: %s", country)
+        results[country] = {
+                                "status": "failure",
+                                "tariff_data": None,
+                                "downloads": {}
+                            }
+        # Fetch tariff info
+        tariff_data = self.fetch_tariff_info(country=country)
+        if not tariff_data:
+            return None
 
-            results[country]["tariff_data"] = tariff_data
+        results[country]["tariff_data"] = tariff_data
 
-            # Download PDFs
-            download_results = self.download_tariff_pdfs(tariff_data=tariff_data)
-            results[country]["downloads"] = download_results
+        # Download PDFs
+        download_results = self.download_tariff_pdfs(tariff_data=tariff_data)
+        results[country]["downloads"] = download_results
 
-            if download_results["inbound"] or download_results["outbound"]:
-                results[country]["status"] = "success"
+        if download_results["inbound"] or download_results["outbound"]:
+            results[country]["status"] = "success"
+
         return results
