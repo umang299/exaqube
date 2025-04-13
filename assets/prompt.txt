@@ -1,0 +1,29 @@
+Read the below image and return data in given format 
+
+[   
+    {
+        "Country" : str,
+        'Type' : str # Inbound or outbound i.e. IB/OB
+        "Liner_Name" : str #return null if not found in table.
+        "Port" : str # return null if not found in table,
+        "Equipment_Type" : str # Equipment code,
+        "Currency" : str
+        "Free_days" : int # Number of free days,
+        "Bucket_1" : int # $min/$max,
+        "Bucket_2": int # $min/$max,
+        "Bucket_3": int # $min/$max
+        },
+
+    {
+        "Country" : str,
+        'Type' : str # Inbound or outbound i.e. IB/OB
+        "Liner_Name" : str #return null if not found in table.
+        "Port" : str # return null if not found in table,
+        "Equipment_Type" : str # Equipment code,
+        "Currency" : str
+        "Free_days" : int # Number of free days,
+        "Bucket_1" : int # $min/$max,
+        "Bucket_2": int # $min/$max,
+        "Bucket_3": int # $min/$max
+    },
+]
