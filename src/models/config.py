@@ -16,9 +16,15 @@ class ExtractorConfig:
     model_name: str
 
 @dataclass
+class OpenaiConfig:
+    model_name: str
+    prompt_file: str
+
+@dataclass
 class Config:
     scrapper: ScrapperConfig
     extractor: ExtractorConfig
+    openai: OpenaiConfig
 
     @classmethod
     def from_yaml(cls, filepath: str) -> "Config":
@@ -26,7 +32,8 @@ class Config:
             data = yaml.safe_load(f)
 
         return cls(scrapper=ScrapperConfig(**data["scrapper"]),
-                   extractor=ExtractorConfig(**data["extractor"])
+                   extractor=ExtractorConfig(**data["extractor"]),
+                   openai = OpenaiConfig(**data['openai'])
                    )
 
     def to_dict(self) -> dict:
@@ -41,5 +48,9 @@ class Config:
                 "iou_thrs" : self.extractor.iou_thrs,
                 "img_dir" : self.extractor.img_dir,
                 "model_name" : self.extractor.model_name
+            },
+            "openai" : {
+                "model_name" : self.openai.model_name,
+                "prompt_file" : self.openai.prompt_file
             }
         }
