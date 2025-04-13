@@ -36,6 +36,9 @@ class TariffDB:
             config: Configuration object containing database settings
         """
         self.db_path = os.path.join(cwd, config.sqlite.name)
+        if not os.path.exists(self.db_path):
+            self.create_db()
+            
         logger.info("Database initialized at: %s", self.db_path)
 
     def _get_connection(self) -> sqlite3.Connection:
@@ -56,7 +59,6 @@ class TariffDB:
         """
         query = """
         CREATE TABLE IF NOT EXISTS shipping_tariffs (
-            doc_id VARCHAR(255) PRIMARY KEY,
             Type VARCHAR(255),
             Country VARCHAR(255),
             "Liner Name" VARCHAR(255),
@@ -132,9 +134,8 @@ class TariffDB:
             "Free days",
             "Bucket 1",
             "Bucket 2",
-            "Bucket 3",
-            doc_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            "Bucket 3"
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         conn = None
         try:
